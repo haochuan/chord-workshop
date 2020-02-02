@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Head from '../components/head';
+import Display from '../components/Display';
 import {
   Container,
   Card,
@@ -8,30 +9,59 @@ import {
   Switch,
   LinearProgress,
   Slider,
-  Typography
+  Typography,
+  AppBar,
+  Tabs,
+  Tab,
+  Box,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  Badge,
 } from '@material-ui/core';
 import { withStyles } from '@material-ui/core/styles';
+
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <Typography
+      component="div"
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box p={3}>{children}</Box>}
+    </Typography>
+  );
+}
 
 const style = {
   card: {
     minWidth: 275,
-    padding: 20
-  }
+    padding: 20,
+  },
 };
+
+const NOTES = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+const MODIFIERS = ['#', 'b'];
+const TYPES = [
+  'Maj',
+  'Maj7',
+  'min',
+  'min7',
+  'dim',
+  'dim7',
+  '6',
+  '9',
+  'sus2',
+  'sus4',
+];
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getChord() {
-  const notes = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-  const modifiers = ['#', 'b', ''];
-  const types = ['Maj', 'Maj7', 'min', 'min7', 'dim', 'dim7', '6'];
-  return {
-    note: notes[getRandomInt(0, notes.length - 1)],
-    mod: modifiers[getRandomInt(0, modifiers.length - 1)],
-    type: types[getRandomInt(0, types.length - 1)]
-  };
 }
 
 const IOSSwitch = withStyles(theme => ({
@@ -39,7 +69,7 @@ const IOSSwitch = withStyles(theme => ({
     width: 252,
     height: 76,
     padding: 0,
-    margin: theme.spacing(3)
+    margin: theme.spacing(3),
   },
   switchBase: {
     padding: 1,
@@ -49,27 +79,27 @@ const IOSSwitch = withStyles(theme => ({
       '& + $track': {
         backgroundColor: '#556cd6',
         opacity: 1,
-        border: 'none'
-      }
+        border: 'none',
+      },
     },
     '&$focusVisible $thumb': {
       color: '#52d869',
-      border: '18px solid #fff'
-    }
+      border: '18px solid #fff',
+    },
   },
   thumb: {
     width: 72,
-    height: 72
+    height: 72,
   },
   track: {
     borderRadius: 78 / 2,
     border: `1px solid ${theme.palette.grey[400]}`,
     backgroundColor: theme.palette.grey[50],
     opacity: 1,
-    transition: theme.transitions.create(['background-color', 'border'])
+    transition: theme.transitions.create(['background-color', 'border']),
   },
   checked: {},
-  focusVisible: {}
+  focusVisible: {},
 }))(({ classes, ...props }) => {
   return (
     <Switch
@@ -80,71 +110,200 @@ const IOSSwitch = withStyles(theme => ({
         switchBase: classes.switchBase,
         thumb: classes.thumb,
         track: classes.track,
-        checked: classes.checked
+        checked: classes.checked,
       }}
       {...props}
     />
   );
 });
 
+function getLocalCache() {
+  return JSON.parse(localStorage.getItem('chordWorkshopCache')) || null;
+}
+
 class Home extends React.Component {
   scheduler = null;
   state = {
     running: false,
-    chord: getChord(),
+    chord: {},
     duration: 3,
-    progress: 0
+    progress: 0,
+    tabIndex: 0,
+    notes: NOTES.map(n => {
+      return {
+        name: n,
+        on: true,
+      };
+    }),
+    modifiers: MODIFIERS.map(m => {
+      return {
+        name: m,
+        on: true,
+      };
+    }),
+    types: TYPES.map(t => {
+      return {
+        name: t,
+        on: true,
+      };
+    }),
+  };
+
+  setPersistState = state => {
+    this.setState(state, () => {
+       localStorage.setItem('chordWorkshopCache', JSON.stringify(this.state));
+    });
+  }
+  getChord = () => {
+    const notes = this.state.notes.filter(n => n.on);
+    const modifiers = [...this.state.modifiers, { name: '', on: true }].filter(
+      n => n.on,
+    ); // '' for natual
+    const types = this.state.types.filter(n => n.on);
+    console.log({
+      note:
+        notes.length !== 0 ? notes[getRandomInt(0, notes.length - 1)].name : '',
+      mod:
+        modifiers.length !== 0
+          ? modifiers[getRandomInt(0, modifiers.length - 1)].name
+          : '',
+      type:
+        types.length !== 0 ? types[getRandomInt(0, types.length - 1)].name : '',
+    });
+    return {
+      note:
+        notes.length !== 0 ? notes[getRandomInt(0, notes.length - 1)].name : '',
+      mod:
+        modifiers.length !== 0
+          ? modifiers[getRandomInt(0, modifiers.length - 1)].name
+          : '',
+      type:
+        types.length !== 0 ? types[getRandomInt(0, types.length - 1)].name : '',
+    };
   };
 
   toggle = () => {
     if (this.state.running) {
       clearInterval(this.scheduler);
-      this.setState({ progress: 0 });
+      this.setPersistState({ progress: 0 });
     } else {
-      this.setState({ chord: getChord() });
+      this.setPersistState({ chord: this.getChord() });
       this.scheduler = setInterval(() => {
         if (this.state.progress >= this.state.duration) {
-          this.setState({ progress: 1, chord: getChord() });
+          this.setPersistState({ progress: 1, chord: this.getChord() });
         } else {
-          this.setState({ progress: this.state.progress + 1 });
+          this.setPersistState({ progress: this.state.progress + 1 });
         }
       }, 1000);
     }
 
-    this.setState({ running: !this.state.running });
+    this.setPersistState({ running: !this.state.running });
   };
 
-  showChord = () => {
-    const { chord } = this.state;
+  renderNoteFilter = () => {
+    const { notes } = this.state;
     return (
-      <p className="chord">
-        <span className="note">{chord.note}</span>
-        <span className="mod">{chord.mod}</span>
-        <span className="type">{chord.type}</span>
-        <style jsx>{`
-          .chord {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 50px;
-          }
-          .note {
-            font-size: 80px;
-            font-weight: 600;
-          }
-          .mod {
-            margin-top: -40px;
-            padding-right: 10px;
-          }
-          .type {
-          }
-        `}</style>
-      </p>
+      <FormGroup row>
+        {notes.map((n, index) => {
+          return (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={n.on}
+                  onChange={() => {
+                    this.setPersistState({
+                      notes: [
+                        ...notes.slice(0, index),
+                        { ...n, on: !n.on },
+                        ...notes.slice(index + 1),
+                      ],
+                    });
+                  }}
+                  value="checked"
+                  color="primary"
+                  key={index}
+                />
+              }
+              label={n.name}
+              key={index}
+            />
+          );
+        })}
+      </FormGroup>
+    );
+  };
+  renderModifierFilter = () => {
+    const { modifiers } = this.state;
+    return (
+      <FormGroup row>
+        {modifiers.map((n, index) => {
+          return (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={n.on}
+                  onChange={() => {
+                    this.setPersistState({
+                      modifiers: [
+                        ...modifiers.slice(0, index),
+                        { ...n, on: !n.on },
+                        ...modifiers.slice(index + 1),
+                      ],
+                    });
+                  }}
+                  value="checked"
+                  color="primary"
+                  key={index}
+                />
+              }
+              label={n.name}
+              key={index}
+            />
+          );
+        })}
+      </FormGroup>
+    );
+  };
+  renderTypeFilter = () => {
+    const { types } = this.state;
+    return (
+      <FormGroup row>
+        {types.map((n, index) => {
+          return (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={n.on}
+                  onChange={() => {
+                    this.setPersistState({
+                      types: [
+                        ...types.slice(0, index),
+                        { ...n, on: !n.on },
+                        ...types.slice(index + 1),
+                      ],
+                    });
+                  }}
+                  value="checked"
+                  color="primary"
+                  key={index}
+                />
+              }
+              label={n.name}
+              key={index}
+            />
+          );
+        })}
+      </FormGroup>
     );
   };
 
+  componentDidMount() {
+    if (getLocalCache()) {
+      this.setState(getLocalCache());
+    }
+    this.setPersistState({ chord: this.getChord() });
+  }
   render() {
-    const chord = this.showChord();
     return (
       <Container fixed>
         <Head title="chord workshop" />
@@ -168,7 +327,7 @@ class Home extends React.Component {
               aria-labelledby="discrete-slider"
               valueLabelDisplay="auto"
               onChange={(e, value) => {
-                this.setState({ duration: value });
+                this.setPersistState({ duration: value });
               }}
               step={1}
               marks
@@ -176,6 +335,56 @@ class Home extends React.Component {
               max={10}
             />
           </div>
+          <AppBar position="static">
+            <Tabs
+              value={this.state.tabIndex}
+              onChange={(e, v) => {
+                this.setPersistState({ tabIndex: v });
+              }}
+              aria-label="simple tabs example"
+              variant="fullWidth"
+            >
+              <Tab
+                label={
+                  <Badge
+                    badgeContent={this.state.notes.filter(n => n.on).length}
+                    color="error"
+                  >
+                    Chord
+                  </Badge>
+                }
+              />
+              <Tab
+                label={
+                  <Badge
+                    badgeContent={this.state.modifiers.filter(n => n.on).length}
+                    color="error"
+                  >
+                    Flat/Sharp
+                  </Badge>
+                }
+              />
+              <Tab
+                label={
+                  <Badge
+                    badgeContent={this.state.types.filter(n => n.on).length}
+                    color="error"
+                  >
+                    Type
+                  </Badge>
+                }
+              />
+            </Tabs>
+          </AppBar>
+          <TabPanel value={this.state.tabIndex} index={0}>
+            {this.renderNoteFilter()}
+          </TabPanel>
+          <TabPanel value={this.state.tabIndex} index={1}>
+            {this.renderModifierFilter()}
+          </TabPanel>
+          <TabPanel value={this.state.tabIndex} index={2}>
+            {this.renderTypeFilter()}
+          </TabPanel>
         </Card>
         <br />
         <LinearProgress
@@ -183,7 +392,9 @@ class Home extends React.Component {
           value={(this.state.progress / this.state.duration) * 100}
         />
         <Card style={style.card}>
-          <CardContent>{chord}</CardContent>
+          <CardContent>
+            <Display chord={this.state.chord} />
+          </CardContent>
         </Card>
 
         <style jsx>{`
