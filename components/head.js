@@ -14,8 +14,19 @@ const Head = props => (
       name="description"
       content={props.description || defaultDescription}
     />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="viewport"
+      content="minimum-scale=1, initial-scale=1, width=device-width"
+    />
     <link rel="icon" href="/favicon.ico" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
     <meta property="og:url" content={props.url || defaultOGURL} />
     <meta property="og:title" content={props.title || ''} />
     <meta
@@ -35,7 +46,7 @@ Head.propTypes = {
   title: string,
   description: string,
   url: string,
-  ogImage: string,
+  ogImage: string
 };
 
 export default Head;

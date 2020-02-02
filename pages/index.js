@@ -1,143 +1,220 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Head from '../components/head';
-import Nav from '../components/nav';
+import {
+  Container,
+  Card,
+  CardContent,
+  Switch,
+  LinearProgress,
+  Slider,
+  Typography
+} from '@material-ui/core';
+import { withStyles } from '@material-ui/core/styles';
 
-const Home = () => {
-  const [date, setDate] = useState(null);
-
-  useEffect(() => {
-    async function getDate() {
-      const res = await fetch('/api/date');
-      const newDate = await res.json();
-      setDate(newDate);
-    }
-    getDate();
-  }, []);
-
-  return (
-    <div>
-      <Head title="Home" />
-      <Nav />
-
-      <div className="hero">
-        <h1 className="title">Welcome to Next!</h1>
-        <p className="description">
-          To get started, edit the <code>pages/index.js</code> or{' '}
-          <code>pages/api/date.js</code> files, then save to reload.
-        </p>
-
-        <p className="row date">
-          The date is:&nbsp;{' '}
-          {date ? (
-            <span>
-              <b>{date.date}</b>
-            </span>
-          ) : (
-            <span className="loading"></span>
-          )}
-        </p>
-
-        <div className="row">
-          <Link href="https://github.com/zeit/next.js#setup">
-            <a className="card">
-              <h3>Getting Started &rarr;</h3>
-              <p>Learn more about Next.js on GitHub and in their examples.</p>
-            </a>
-          </Link>
-          <Link href="https://github.com/zeit/next.js/tree/master/examples">
-            <a className="card">
-              <h3>Examples &rarr;</h3>
-              <p>Find other example boilerplates on the Next.js GitHub.</p>
-            </a>
-          </Link>
-          <Link href="https://github.com/zeit/next.js">
-            <a className="card">
-              <h3>Create Next App &rarr;</h3>
-              <p>Was this tool helpful? Let us know how we can improve it!</p>
-            </a>
-          </Link>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .hero {
-          width: 100%;
-          color: #333;
-        }
-        .title {
-          margin: 0;
-          width: 100%;
-          padding-top: 80px;
-          line-height: 1.15;
-          font-size: 48px;
-        }
-        .title,
-        .description {
-          text-align: center;
-        }
-        .row {
-          max-width: 880px;
-          margin: 80px auto 40px;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-around;
-        }
-        .date {
-          height: 24px;
-          max-width: calc(100% - 32px)
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 16px;
-        }
-        .date p {
-          text-align: center;
-        }
-        .date span {
-          width: 176px;
-          text-align: center;
-        }
-        @keyframes Loading {
-          0%{background-position:0% 50%}
-          50%{background-position:100% 50%}
-          100%{background-position:0% 50%}
-        }
-        .date .loading {
-          max-width: 100%;
-          height: 24px;
-          border-radius: 4px;
-          display: inline-block;
-          background: linear-gradient(270deg, #D1D1D1, #EAEAEA);
-          background-size: 200% 200%;
-          animation: Loading 2s ease infinite;
-        }
-        .card {
-          padding: 18px 18px 24px;
-          width: 220px;
-          text-align: left;
-          text-decoration: none;
-          color: #434343;
-          border: 1px solid #9b9b9b;
-        }
-        .card:hover {
-          border-color: #067df7;
-        }
-        .card h3 {
-          margin: 0;
-          color: #067df7;
-          font-size: 18px;
-        }
-        .card p {
-          margin: 0;
-          padding: 12px 0 0;
-          font-size: 13px;
-          color: #333;
-        }
-      `}</style>
-    </div>
-  );
+const style = {
+  card: {
+    minWidth: 275,
+    padding: 20
+  }
 };
 
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getChord() {
+  const notes = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const modifiers = ['#', 'b', ''];
+  const types = ['Maj', 'Maj7', 'min', 'min7', 'dim', 'dim7', '6'];
+  return {
+    note: notes[getRandomInt(0, notes.length - 1)],
+    mod: modifiers[getRandomInt(0, modifiers.length - 1)],
+    type: types[getRandomInt(0, types.length - 1)]
+  };
+}
+
+const IOSSwitch = withStyles(theme => ({
+  root: {
+    width: 252,
+    height: 76,
+    padding: 0,
+    margin: theme.spacing(3)
+  },
+  switchBase: {
+    padding: 1,
+    '&$checked': {
+      transform: 'translateX(178px)',
+      color: theme.palette.common.white,
+      '& + $track': {
+        backgroundColor: '#556cd6',
+        opacity: 1,
+        border: 'none'
+      }
+    },
+    '&$focusVisible $thumb': {
+      color: '#52d869',
+      border: '18px solid #fff'
+    }
+  },
+  thumb: {
+    width: 72,
+    height: 72
+  },
+  track: {
+    borderRadius: 78 / 2,
+    border: `1px solid ${theme.palette.grey[400]}`,
+    backgroundColor: theme.palette.grey[50],
+    opacity: 1,
+    transition: theme.transitions.create(['background-color', 'border'])
+  },
+  checked: {},
+  focusVisible: {}
+}))(({ classes, ...props }) => {
+  return (
+    <Switch
+      focusVisibleClassName={classes.focusVisible}
+      disableRipple
+      classes={{
+        root: classes.root,
+        switchBase: classes.switchBase,
+        thumb: classes.thumb,
+        track: classes.track,
+        checked: classes.checked
+      }}
+      {...props}
+    />
+  );
+});
+
+class Home extends React.Component {
+  scheduler = null;
+  state = {
+    running: false,
+    chord: getChord(),
+    duration: 3,
+    progress: 0
+  };
+
+  toggle = () => {
+    if (this.state.running) {
+      clearInterval(this.scheduler);
+      this.setState({ progress: 0 });
+    } else {
+      this.setState({ chord: getChord() });
+      this.scheduler = setInterval(() => {
+        if (this.state.progress >= this.state.duration) {
+          this.setState({ progress: 1, chord: getChord() });
+        } else {
+          this.setState({ progress: this.state.progress + 1 });
+        }
+      }, 1000);
+    }
+
+    this.setState({ running: !this.state.running });
+  };
+
+  showChord = () => {
+    const { chord } = this.state;
+    return (
+      <p className="chord">
+        <span className="note">{chord.note}</span>
+        <span className="mod">{chord.mod}</span>
+        <span className="type">{chord.type}</span>
+        <style jsx>{`
+          .chord {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+          }
+          .note {
+            font-size: 80px;
+            font-weight: 600;
+          }
+          .mod {
+            margin-top: -40px;
+            padding-right: 10px;
+          }
+          .type {
+          }
+        `}</style>
+      </p>
+    );
+  };
+
+  render() {
+    const chord = this.showChord();
+    return (
+      <Container fixed>
+        <Head title="chord workshop" />
+        <Card style={style.card}>
+          <div className="controller">
+            <IOSSwitch
+              checked={this.state.running}
+              onChange={this.toggle}
+              value="checkedA"
+              inputProps={{ 'aria-label': 'secondary checkbox' }}
+            />
+            <Typography id="non-linear-slider" gutterBottom>
+              <span className="duration-text">
+                Change chord every{' '}
+                <span className="red">{this.state.duration} </span>
+                seconds
+              </span>
+            </Typography>
+            <Slider
+              defaultValue={3}
+              aria-labelledby="discrete-slider"
+              valueLabelDisplay="auto"
+              onChange={(e, value) => {
+                this.setState({ duration: value });
+              }}
+              step={1}
+              marks
+              min={1}
+              max={10}
+            />
+          </div>
+        </Card>
+        <br />
+        <LinearProgress
+          variant="determinate"
+          value={(this.state.progress / this.state.duration) * 100}
+        />
+        <Card style={style.card}>
+          <CardContent>{chord}</CardContent>
+        </Card>
+
+        <style jsx>{`
+          .title {
+            margin: 0;
+            width: 100%;
+            padding-top: 80px;
+            line-height: 1.15;
+            font-size: 48px;
+          }
+          .title,
+          .description {
+            text-align: center;
+          }
+          .controller {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
+          }
+          .duration-text {
+            font-size: 20px;
+          }
+          .red {
+            color: red;
+            font-weight: 600;
+          }
+        `}</style>
+      </Container>
+    );
+  }
+}
 export default Home;
